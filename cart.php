@@ -10,7 +10,38 @@ if(!isset($_SESSION['user'])){
 
 $user_id = $_SESSION['user']['id'];
 
+// =========================
+// Tambah produk ke cart dari index
+// =========================
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
+    $product_id = intval($_POST['id']);
+
+    // cek apakah produk ada
+    $cek_produk = mysqli_query($koneksi,"SELECT * FROM products WHERE id='$product_id'");
+    if ($cek_produk && mysqli_num_rows($cek_produk) > 0) {
+        $produk = mysqli_fetch_assoc($cek_produk);
+
+        if ($produk['stok'] > 0) {
+            // cek apakah produk sudah ada di cart
+            $cek_cart = mysqli_query($koneksi,"SELECT * FROM cart WHERE user_id='$user_id' AND product_id='$product_id'");
+            if (mysqli_num_rows($cek_cart) > 0) {
+                // update qty +1
+                mysqli_query($koneksi,"UPDATE cart SET qty = qty + 1 WHERE user_id='$user_id' AND product_id='$product_id'");
+            } else {
+                // insert baru
+                mysqli_query($koneksi,"INSERT INTO cart(user_id, product_id, qty) VALUES('$user_id','$product_id',1)");
+            }
+        }
+    }
+
+    // redirect agar tidak resubmit
+    header("Location: cart.php");
+    exit;
+}
+
+// =========================
 // Update qty otomatis
+// =========================
 if(isset($_POST['qty']) && isset($_POST['cart_id'])){
     $cart_id = $_POST['cart_id'];
     $qty     = (int) $_POST['qty'];
@@ -34,13 +65,17 @@ if(isset($_POST['qty']) && isset($_POST['cart_id'])){
     }
 }
 
+// =========================
 // Hapus item
+// =========================
 if(isset($_GET['hapus'])){
     $id = $_GET['hapus'];
     mysqli_query($koneksi,"DELETE FROM cart WHERE id='$id' AND user_id='$user_id'");
 }
 
+// =========================
 // Ambil data keranjang
+// =========================
 $q = mysqli_query($koneksi,"SELECT c.id, c.product_id, c.qty, p.nama_produk, p.harga, p.stok 
                             FROM cart c 
                             JOIN products p ON c.product_id=p.id 
