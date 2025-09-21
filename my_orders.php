@@ -26,7 +26,7 @@ $q = mysqli_query($koneksi,"SELECT id, tanggal, total, status
 
   <h2 class="mb-4">Pesanan Saya</h2>
 
-  <!-- ✅ Tombol kembali dipindahkan ke atas tabel -->
+  <!-- Tombol kembali diatas -->
   <div class="mb-3">
     <a href="index.php" class="btn btn-secondary">⬅ Kembali</a>
   </div>

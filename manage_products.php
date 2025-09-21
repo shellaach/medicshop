@@ -154,7 +154,7 @@ if(isset($_POST['update'])){
           </td>
         </tr>
 
-        <!-- Modal Edit -->
+        <!-- Edit Produk -->
         <div class="modal fade" id="edit<?= $row['id'] ?>" tabindex="-1">
           <div class="modal-dialog">
             <div class="modal-content">

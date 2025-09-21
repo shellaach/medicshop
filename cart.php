@@ -10,9 +10,7 @@ if(!isset($_SESSION['user'])){
 
 $user_id = $_SESSION['user']['id'];
 
-// =========================
 // Tambah produk ke cart dari index
-// =========================
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     $product_id = intval($_POST['id']);
 
@@ -39,9 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     exit;
 }
 
-// =========================
 // Update qty otomatis
-// =========================
 if(isset($_POST['qty']) && isset($_POST['cart_id'])){
     $cart_id = $_POST['cart_id'];
     $qty     = (int) $_POST['qty'];
@@ -65,17 +61,14 @@ if(isset($_POST['qty']) && isset($_POST['cart_id'])){
     }
 }
 
-// =========================
+
 // Hapus item
-// =========================
 if(isset($_GET['hapus'])){
     $id = $_GET['hapus'];
     mysqli_query($koneksi,"DELETE FROM cart WHERE id='$id' AND user_id='$user_id'");
 }
 
-// =========================
 // Ambil data keranjang
-// =========================
 $q = mysqli_query($koneksi,"SELECT c.id, c.product_id, c.qty, p.nama_produk, p.harga, p.stok 
                             FROM cart c 
                             JOIN products p ON c.product_id=p.id 

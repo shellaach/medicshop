@@ -40,7 +40,7 @@ if(!$order){
 </head>
 <body class="container py-4">
 
-  <!-- tombol kembali di atas -->
+  <!-- tombol kembali -->
   <div class="mb-3">
     <a href="manage_orders.php" class="btn btn-secondary">⬅ Kembali</a>
   </div>
@@ -95,7 +95,7 @@ if(!$order){
     </tbody>
   </table>
 
-  <!-- tombol cetak PDF di bawah -->
+  <!-- tombol cetak PDF -->
   <div class="mt-4">
     <a href="order_detail_pdf.php?id=<?= $order['id']; ?>" target="_blank" class="btn btn-primary">📝 Cetak PDF</a>
   </div>

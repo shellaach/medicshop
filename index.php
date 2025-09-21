@@ -98,11 +98,11 @@ $role     = $_SESSION['user']['role'];
 <footer class="bg-primary text-white mt-5">
   <div class="container text-center py-3">
     <p class="mb-1">&copy; <?= date("Y") ?> MedicShop. All rights reserved.</p>
-    <small>Developed with ❤️ Shella Christanti</small>
+    <small>Developed by ❤️ Shella Christanti</small>
 
     <hr class="border-light my-3">
 
-    <p class="mb-1">📞 0812-3495-2364 | ✉️ helpcenter@medicshop.com</p>
+    <p class="mb-1">📞 0812-3495-2364 | ✉️ admin@medicshop.com</p>
     <p class="mb-0">🏬 Jl. Katamso No. 10, Sidoarjo</p>
   </div>
 </footer>
