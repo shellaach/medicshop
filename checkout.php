@@ -1,7 +1,6 @@
 <?php
 session_start();
 include "config/koneksi.php";
-require('fpdf/fpdf.php');
 
 // Cek login
 if(!isset($_SESSION['user'])){
@@ -50,70 +49,6 @@ if(isset($_POST['checkout'])){
     }
 
     mysqli_query($koneksi,"DELETE FROM cart WHERE user_id='$user_id'");
-
-    // ==== Generate PDF langsung setelah checkout ====
-    $o = mysqli_query($koneksi,"SELECT * FROM orders WHERE id='$order_id' AND user_id='$user_id'");
-    $order = mysqli_fetch_assoc($o);
-
-    $oi = mysqli_query($koneksi,"SELECT oi.*, p.nama_produk 
-                                 FROM order_items oi 
-                                 JOIN products p ON oi.product_id=p.id 
-                                 WHERE order_id='$order_id'");
-
-    class PDF extends FPDF {
-        function Header(){
-            $this->SetFont('Arial','B',14);
-            $this->Cell(0,10,'Nota Pembelian - MedicShop',0,1,'C');
-            $this->Ln(5);
-        }
-        function Footer(){
-            $this->SetY(-15);
-            $this->SetFont('Arial','I',8);
-            $this->Cell(0,10,'Halaman '.$this->PageNo(),0,0,'C');
-        }
-    }
-
-    $pdf = new PDF();
-    $pdf->AddPage();
-    $pdf->SetFont('Arial','',12);
-
-    $pdf->Cell(0,10,'ID Order : '.$order['id'],0,1);
-    $pdf->Cell(0,10,'User ID  : '.$order['user_id'],0,1);
-    $pdf->Cell(0,10,'Tanggal  : '.$order['tanggal'],0,1);
-    $pdf->Cell(0,10,'Metode   : '.$order['metode_bayar'],0,1);
-    $pdf->Ln(5);
-
-    $pdf->SetFont('Arial','B',12);
-    $pdf->Cell(70,10,'Produk',1);
-    $pdf->Cell(30,10,'Qty',1);
-    $pdf->Cell(40,10,'Harga',1);
-    $pdf->Cell(40,10,'Subtotal',1);
-    $pdf->Ln();
-
-    $pdf->SetFont('Arial','',12);
-    $totalNota = 0;
-    while($r = mysqli_fetch_assoc($oi)){
-        $sub = $r['qty'] * $r['harga'];
-        $totalNota += $sub;
-        $pdf->Cell(70,10,$r['nama_produk'],1);
-        $pdf->Cell(30,10,$r['qty'],1);
-        $pdf->Cell(40,10,'Rp '.number_format($r['harga'],0,',','.'),1);
-        $pdf->Cell(40,10,'Rp '.number_format($sub,0,',','.'),1);
-        $pdf->Ln();
-    }
-
-    $pdf->Cell(140,10,'Total',1);
-    $pdf->Cell(40,10,'Rp '.number_format($totalNota,0,',','.'),1);
-
-    // Bersihkan buffer agar file tidak corrupt
-    ob_end_clean();
-
-    // Download PDF
-    $pdf->Output('D','nota-'.$order['id'].'.pdf');
-
-    // Redirect ke halaman index setelah download
-    header("Location: index.php");
-    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -131,6 +66,15 @@ if(isset($_POST['checkout'])){
       <h4>🛒 Checkout</h4>
     </div>
     <div class="card-body">
+
+      <?php if($order_id){ ?>
+        <div class="alert alert-success">
+          <h5>✅ Pesanan Berhasil!</h5>
+          <p>Pesanan dengan ID <b>#<?= $order_id ?></b> berhasil dibuat menggunakan metode <b><?= $metode ?></b>.</p>
+          <a href="nota.php?id=<?= $order_id ?>" class="btn btn-danger" target="_blank">📄 Download Nota (PDF)</a>
+          <a href="index.php" class="btn btn-primary">⬅ Kembali ke Produk</a>
+        </div>
+      <?php } else { ?>
 
       <h5>Ringkasan Belanja</h5>
       <table class="table table-bordered">
@@ -176,6 +120,8 @@ if(isset($_POST['checkout'])){
         <button type="submit" name="checkout" class="btn btn-success mt-3">✅ Konfirmasi Checkout</button>
         <a href="cart.php" class="btn btn-secondary mt-3">⬅ Kembali ke Keranjang</a>
       </form>
+
+      <?php } ?>
 
     </div>
   </div>

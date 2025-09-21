@@ -34,6 +34,7 @@ $role     = $_SESSION['user']['role'];
           <li class="nav-item"><a class="nav-link" href="report_bulanan.php">Laporan Bulanan</a></li>
         <?php } else { ?>
           <li class="nav-item"><a class="nav-link" href="cart.php">Keranjang Belanja</a></li>
+          <li class="nav-item"><a class="nav-link" href="my_orders.php">Lihat Status Pesanan</a></li>
         <?php } ?>
         <li class="nav-item"><a class="nav-link text-warning" href="logout.php">Logout</a></li>
       </ul>
@@ -44,7 +45,7 @@ $role     = $_SESSION['user']['role'];
 <!-- Welcome -->
 <div class="container mt-4">
   <div class="alert alert-success">
-    👋 Selamat datang, <b><?= $username ?></b>! Anda login sebagai <b><?= $role ?></b>.
+    👋 Selamat datang, <b><?= $username ?></b>!
   </div>
 
   <h2 class="mb-3">🛍️ Daftar Produk</h2>
