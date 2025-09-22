@@ -85,9 +85,28 @@ if(isset($_POST['update'])){
 </head>
 <body class="bg-light">
 
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <!-- Logo MedicShop diarahkan ke index.php -->
+    <a class="navbar-brand fw-bold" href="index.php">MedicShop</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ms-auto">
+        <!-- Tombol logout -->
+        <li class="nav-item">
+          <a class="nav-link text-warning" href="logout.php">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
 <div class="container mt-4">
-  <h2 class="mb-3">📦 Kelola Produk</h2>
-  <a href="index.php" class="btn btn-secondary">⬅ Kembali</a>
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>📦 Kelola Produk</h2>
+    <a href="index.php" class="btn btn-secondary">⬅ Kembali</a>
+  </div>
   
   <!-- Form Tambah -->
   <div class="card mb-4">

@@ -84,6 +84,22 @@ $q = mysqli_query($koneksi,"SELECT c.id, c.product_id, c.qty, p.nama_produk, p.h
 </head>
 <body class="bg-light">
 
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <!-- Logo MedicShop diarahkan ke index.php -->
+    <a class="navbar-brand fw-bold" href="index.php">MedicShop</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ms-auto">
+        <!-- Tombol logout -->
+        <li class="nav-item">
+          <a class="nav-link text-warning" href="logout.php">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
 <div class="container mt-5">
   <div class="card shadow">
     <div class="card-header bg-primary text-white">
