@@ -2,17 +2,32 @@
 include "config/koneksi.php";
 session_start();
 
-if(isset($_POST['login'])){
+if (isset($_POST['login'])) {
   $user = $_POST['username'];
   $pass = md5($_POST['password']); // password di DB sudah pakai MD5
 
-  $q = mysqli_query($koneksi,"SELECT * FROM users WHERE username='$user' AND password='$pass'");
-  if(mysqli_num_rows($q) > 0){
-    $_SESSION['user'] = mysqli_fetch_assoc($q);
+  $q = mysqli_query($koneksi, "SELECT * FROM users WHERE username='$user' AND password='$pass'");
+  if (mysqli_num_rows($q) > 0) {
+    $row = mysqli_fetch_assoc($q);
 
-    // Semua role diarahkan ke index.php
-    header("Location: index.php");
-    exit;
+    // simpan data user penting ke session
+    $_SESSION['user'] = [
+      'id'       => $row['id'],       // penting supaya bisa dipakai di semua file
+      'username' => $row['username'],
+      'role'     => $row['role']
+    ];
+
+    // Redirect sesuai role
+    if ($row['role'] === 'admin') {
+      header("Location: index.php");
+      exit;
+    } elseif ($row['role'] === 'vendor') {
+      header("Location: vendor_dashboard.php");
+      exit;
+    } else {
+      header("Location: index.php"); // default customer
+      exit;
+    }
 
   } else {
     $pesan = "<div class='alert alert-danger'>❌ Username atau password salah!</div>";
@@ -37,7 +52,7 @@ if(isset($_POST['login'])){
         </div>
         <div class="card-body">
 
-          <?php if(isset($pesan)) echo $pesan; ?>
+          <?php if (isset($pesan)) echo $pesan; ?>
 
           <form method="POST">
             <div class="mb-3">

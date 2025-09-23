@@ -35,7 +35,7 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($koneksi, $_GET['se
 <div class="container mt-4">
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-2">
-    <h2>📑 Daftar Pesanan</h2>
+    <h2>📑 Daftar Pesanan (Produk Admin)</h2>
     <a href="index.php" class="btn btn-secondary">⬅ Kembali</a>
   </div>
 
@@ -54,15 +54,21 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($koneksi, $_GET['se
   </div>
 
   <?php
-  $sql = "SELECT o.id, u.username, o.total, o.metode_bayar, o.tanggal, o.status 
-          FROM orders o 
-          JOIN users u ON o.user_id=u.id";
+  // 🔹 Ambil hanya pesanan yang ada produk admin (vendor_id IS NULL)
+  $sql = "SELECT DISTINCT o.id, u.username, o.total, o.metode_bayar, o.tanggal, o.status
+          FROM orders o
+          JOIN users u ON o.user_id = u.id
+          JOIN order_items oi ON oi.order_id = o.id
+          JOIN products p ON oi.product_id = p.id
+          WHERE p.vendor_id IS NULL";
 
   if($search != ""){
-      $sql .= " WHERE o.id LIKE '%$search%' 
-                OR u.username LIKE '%$search%'
-                OR o.metode_bayar LIKE '%$search%'
-                OR o.status LIKE '%$search%'";
+      $sql .= " AND (
+                  o.id LIKE '%$search%' 
+                  OR u.username LIKE '%$search%'
+                  OR o.metode_bayar LIKE '%$search%'
+                  OR o.status LIKE '%$search%'
+                )";
   }
 
   $sql .= " ORDER BY o.tanggal DESC";
@@ -103,7 +109,7 @@ $search = isset($_GET['search']) ? mysqli_real_escape_string($koneksi, $_GET['se
                     case "Dibatalkan":
                       echo '<span class="badge bg-danger">Dibatalkan</span>'; break;
                     default:
-                      echo '<span class="badge bg-danger">Dibatalkan</span>';
+                      echo '<span class="badge bg-secondary">Tidak Diketahui</span>';
                   }
                 ?>
               </td>

@@ -2,31 +2,28 @@
 include "config/koneksi.php";
 session_start();
 
-// ===================== CEK LOGIN & ROLE =====================
+// ===================== CEK LOGIN =====================
 if (!isset($_SESSION['user'])) {
-    echo "<p>Anda belum login! <a href='login.php'>Login</a></p>";
-    exit;
+    die("<p>❌ Akses ditolak! <a href='login.php'>Login</a></p>");
 }
 
-$user = $_SESSION['user'];
-$is_admin = ($user['role'] === 'admin');
+$user_id = $_SESSION['user']['id']; // id dari tabel users
 
-// Ambil info vendor bila user adalah vendor
-$vendor_id = null;
-if ($user['role'] === 'vendor') {
-    $cek_vendor = mysqli_query($koneksi, "SELECT * FROM vendors 
-                   WHERE user_id='{$user['id']}' AND status='approved'");
-    if (mysqli_num_rows($cek_vendor) == 0) {
-        echo "<p>Akun Anda belum disetujui sebagai vendor. 
-               <a href='index.php'>Kembali</a></p>";
-        exit;
-    }
-    $vendor = mysqli_fetch_assoc($cek_vendor);
-    $vendor_id = $vendor['vendor_id'];
-} elseif (!$is_admin) {
-    echo "<p>Anda tidak memiliki akses! <a href='index.php'>Kembali</a></p>";
-    exit;
+// ===================== CEK VENDOR =====================
+$qVendor = mysqli_query($koneksi, "
+    SELECT * FROM vendors 
+    WHERE user_id='$user_id' AND status='approved' 
+    LIMIT 1
+");
+
+if (!$qVendor || mysqli_num_rows($qVendor) == 0) {
+    die("<p>❌ Akun Anda belum disetujui sebagai vendor. 
+        <a href='index.php'>Kembali</a></p>");
 }
+
+$vendor     = mysqli_fetch_assoc($qVendor);
+$vendor_id  = $vendor['vendor_id'];
+$nama_toko  = $vendor['nama_toko'];
 
 // ===================== TAMBAH PRODUK =====================
 if (isset($_POST['tambah'])) {
@@ -35,37 +32,32 @@ if (isset($_POST['tambah'])) {
     $harga    = (int)$_POST['harga'];
     $stok     = (int)$_POST['stok'];
 
-    // Vendor → wajib pakai vendor_id miliknya
-    // Admin → tidak mengisi vendor_id (NULL)
-    $vid = $is_admin ? "NULL" : "'$vendor_id'";
-
     $gambar = "";
     if (!empty($_FILES['gambar']['name'])) {
-        $gambar = time()."_".basename($_FILES['gambar']['name']);
-        move_uploaded_file($_FILES['gambar']['tmp_name'], "images/".$gambar);
+        $gambar = time() . "_" . basename($_FILES['gambar']['name']);
+        move_uploaded_file($_FILES['gambar']['tmp_name'], "images/" . $gambar);
     }
 
     mysqli_query($koneksi, "INSERT INTO products 
         (vendor_id, nama_produk, kategori, harga, stok, gambar) 
-        VALUES ($vid,'$nama','$kategori','$harga','$stok','$gambar')");
-    header("Location: manage_products.php");
+        VALUES ('$vendor_id','$nama','$kategori','$harga','$stok','$gambar')");
+    header("Location: vendor_manage_products.php");
     exit;
 }
 
 // ===================== HAPUS PRODUK =====================
 if (isset($_GET['hapus'])) {
     $id = (int)$_GET['hapus'];
-    // Pastikan hanya pemilik/admin yang bisa hapus
-    $where = $is_admin ? "" : "AND vendor_id='$vendor_id'";
     $res = mysqli_query($koneksi, "SELECT gambar FROM products 
-             WHERE id='$id' $where");
+             WHERE id='$id' AND vendor_id='$vendor_id'");
     if ($row = mysqli_fetch_assoc($res)) {
-        if ($row['gambar'] && file_exists("images/".$row['gambar'])) {
-            unlink("images/".$row['gambar']);
+        if ($row['gambar'] && file_exists("images/" . $row['gambar'])) {
+            unlink("images/" . $row['gambar']);
         }
-        mysqli_query($koneksi, "DELETE FROM products WHERE id='$id' $where");
+        mysqli_query($koneksi, "DELETE FROM products 
+            WHERE id='$id' AND vendor_id='$vendor_id'");
     }
-    header("Location: manage_products.php");
+    header("Location: vendor_manage_products.php");
     exit;
 }
 
@@ -77,28 +69,27 @@ if (isset($_POST['update'])) {
     $harga    = (int)$_POST['harga'];
     $stok     = (int)$_POST['stok'];
 
-    $where = $is_admin ? "" : "AND vendor_id='$vendor_id'";
-    $res = mysqli_query($koneksi,"SELECT gambar FROM products 
-             WHERE id='$id' $where");
+    $res = mysqli_query($koneksi, "SELECT gambar FROM products 
+             WHERE id='$id' AND vendor_id='$vendor_id'");
     if ($row = mysqli_fetch_assoc($res)) {
         $gambar = $row['gambar'];
         if (!empty($_FILES['gambar']['name'])) {
-            if ($gambar && file_exists("images/".$gambar)) {
-                unlink("images/".$gambar);
+            if ($gambar && file_exists("images/" . $gambar)) {
+                unlink("images/" . $gambar);
             }
-            $gambar = time()."_".basename($_FILES['gambar']['name']);
-            move_uploaded_file($_FILES['gambar']['tmp_name'], "images/".$gambar);
+            $gambar = time() . "_" . basename($_FILES['gambar']['name']);
+            move_uploaded_file($_FILES['gambar']['tmp_name'], "images/" . $gambar);
         }
 
-        mysqli_query($koneksi,"UPDATE products SET 
+        mysqli_query($koneksi, "UPDATE products SET 
             nama_produk='$nama',
             kategori='$kategori',
             harga='$harga',
             stok='$stok',
             gambar='$gambar'
-            WHERE id='$id' $where");
+            WHERE id='$id' AND vendor_id='$vendor_id'");
     }
-    header("Location: manage_products.php");
+    header("Location: vendor_manage_products.php");
     exit;
 }
 ?>
@@ -106,15 +97,14 @@ if (isset($_POST['update'])) {
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Kelola Produk <?= $is_admin ? 'Admin' : 'Vendor' ?></title>
+<title>Kelola Produk Vendor</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+<nav class="navbar navbar-expand-lg navbar-dark bg-success">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="index.php">MedicShop</a>
+    <a class="navbar-brand fw-bold" href="vendor_dashboard.php">MedicShop Vendor</a>
     <div class="collapse navbar-collapse">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item"><a class="nav-link text-warning" href="logout.php">Logout</a></li>
@@ -124,34 +114,22 @@ if (isset($_POST['update'])) {
 </nav>
 
 <div class="container mt-4">
-
   <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>📦 Kelola Produk <?= $is_admin ? '(Admin)' : '' ?></h2>
-    <a href="index.php" class="btn btn-secondary">⬅ Kembali</a>
+    <h2>📦 Kelola Produk (<?= htmlspecialchars($nama_toko) ?>)</h2>
+    <a href="vendor_dashboard.php" class="btn btn-secondary">⬅ Kembali</a>
   </div>
 
   <!-- Form Tambah -->
   <div class="card mb-4">
-    <div class="card-header bg-primary text-white">Tambah Produk</div>
+    <div class="card-header bg-success text-white">Tambah Produk</div>
     <div class="card-body">
       <form method="POST" enctype="multipart/form-data">
         <div class="row">
-          <!-- Hapus dropdown pilih vendor untuk admin -->
-          <div class="col-md-3 mb-2">
-            <input type="text" name="nama" class="form-control" placeholder="Nama Produk" required>
-          </div>
-          <div class="col-md-2 mb-2">
-            <input type="text" name="kategori" class="form-control" placeholder="Kategori" required>
-          </div>
-          <div class="col-md-2 mb-2">
-            <input type="number" name="harga" class="form-control" placeholder="Harga" required>
-          </div>
-          <div class="col-md-2 mb-2">
-            <input type="number" name="stok" class="form-control" placeholder="Stok" required>
-          </div>
-          <div class="col-md-3 mb-2">
-            <input type="file" name="gambar" class="form-control">
-          </div>
+          <div class="col-md-3 mb-2"><input type="text" name="nama" class="form-control" placeholder="Nama Produk" required></div>
+          <div class="col-md-2 mb-2"><input type="text" name="kategori" class="form-control" placeholder="Kategori" required></div>
+          <div class="col-md-2 mb-2"><input type="number" name="harga" class="form-control" placeholder="Harga" required></div>
+          <div class="col-md-2 mb-2"><input type="number" name="stok" class="form-control" placeholder="Stok" required></div>
+          <div class="col-md-3 mb-2"><input type="file" name="gambar" class="form-control"></div>
         </div>
         <button type="submit" name="tambah" class="btn btn-success mt-2">Tambah</button>
       </form>
@@ -160,10 +138,9 @@ if (isset($_POST['update'])) {
 
   <!-- Tabel Produk -->
   <table class="table table-bordered table-hover bg-white shadow-sm">
-    <thead class="table-primary">
+    <thead class="table-success">
       <tr>
         <th>No</th>
-        <?php if ($is_admin) echo "<th>Vendor</th>"; ?>
         <th>Foto</th>
         <th>Nama</th>
         <th>Kategori</th>
@@ -174,17 +151,13 @@ if (isset($_POST['update'])) {
     </thead>
     <tbody>
       <?php
-      $where = $is_admin ? "" : "WHERE p.vendor_id='$vendor_id'";
       $q = mysqli_query($koneksi,
-          "SELECT p.*, v.nama_toko FROM products p 
-           LEFT JOIN vendors v ON p.vendor_id=v.vendor_id 
-           $where ORDER BY p.id DESC");
+          "SELECT * FROM products WHERE vendor_id='$vendor_id' ORDER BY id DESC");
       $no = 1;
-      while($row = mysqli_fetch_assoc($q)){ ?>
+      while ($row = mysqli_fetch_assoc($q)) { ?>
         <tr>
           <td><?= $no++ ?></td>
-          <?php if ($is_admin) echo "<td>".htmlspecialchars($row['nama_toko'] ?: '-')."</td>"; ?>
-          <td><?php if($row['gambar']){ ?>
+          <td><?php if ($row['gambar']) { ?>
               <img src="images/<?= $row['gambar'] ?>" width="80">
             <?php } else { ?>
               <img src="images/no-image.png" width="80">
@@ -192,7 +165,7 @@ if (isset($_POST['update'])) {
           </td>
           <td><?= htmlspecialchars($row['nama_produk']) ?></td>
           <td><?= htmlspecialchars($row['kategori']) ?></td>
-          <td>Rp <?= number_format($row['harga'],0,',','.') ?></td>
+          <td>Rp <?= number_format($row['harga'], 0, ',', '.') ?></td>
           <td><?= $row['stok'] ?></td>
           <td>
             <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#edit<?= $row['id'] ?>">Edit</button>
@@ -230,7 +203,7 @@ if (isset($_POST['update'])) {
                   <div class="mb-2">
                     <label>Gambar (kosongkan jika tidak ganti)</label>
                     <input type="file" name="gambar" class="form-control">
-                    <?php if($row['gambar']){ ?>
+                    <?php if ($row['gambar']) { ?>
                       <img src="images/<?= $row['gambar'] ?>" width="100" class="mt-2">
                     <?php } ?>
                   </div>

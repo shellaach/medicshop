@@ -41,7 +41,9 @@ if(isset($_GET['cancel'])){
 }
 
 // Ambil data order milik user
-$stmt = mysqli_prepare($koneksi, "SELECT o.id, o.total, o.metode_bayar, o.tanggal, o.status FROM orders o WHERE o.id = ? AND o.user_id = ?");
+$stmt = mysqli_prepare($koneksi, "SELECT o.id, o.total, o.metode_bayar, o.tanggal, o.status 
+                                  FROM orders o 
+                                  WHERE o.id = ? AND o.user_id = ?");
 mysqli_stmt_bind_param($stmt, "ii", $order_id, $user_id);
 mysqli_stmt_execute($stmt);
 $res = mysqli_stmt_get_result($stmt);
@@ -52,6 +54,34 @@ if(!$order){
     die("❌ Pesanan tidak ditemukan atau bukan milik Anda.");
 }
 
+// Ambil data vendor (nama toko)
+$stmt_vendor = mysqli_prepare(
+  $koneksi,
+  "SELECT DISTINCT v.nama_toko 
+   FROM order_items i
+   JOIN products p ON i.product_id = p.id
+   LEFT JOIN vendors v ON p.vendor_id = v.vendor_id
+   WHERE i.order_id = ?"
+);
+mysqli_stmt_bind_param($stmt_vendor, "i", $order_id);
+mysqli_stmt_execute($stmt_vendor);
+$res_vendor = mysqli_stmt_get_result($stmt_vendor);
+
+$vendors = [];
+while($row_v = mysqli_fetch_assoc($res_vendor)){
+    $vendors[] = !empty($row_v['nama_toko']) ? $row_v['nama_toko'] : "Admin";
+}
+mysqli_stmt_close($stmt_vendor);
+
+// ✅ Perbaikan: hindari error jika array kosong
+if (count($vendors) === 0) {
+    $nama_toko_display = "Admin"; 
+} elseif (count($vendors) === 1) {
+    $nama_toko_display = $vendors[0];
+} else {
+    $nama_toko_display = implode(", ", $vendors);
+}
+
 // helper badge
 function badgeStatus($status){
     $s = trim($status);
@@ -59,7 +89,7 @@ function badgeStatus($status){
     if(strcasecmp($s, "Dikirim") === 0)  return '<span class="badge bg-info text-dark">Dikirim</span>';
     if(strcasecmp($s, "Selesai") === 0)  return '<span class="badge bg-success">Selesai</span>';
     if(strcasecmp($s, "Dibatalkan") === 0) return '<span class="badge bg-danger">Dibatalkan</span>';
-    return '<span class="badge bg-secondary">Tidak diketahui</span>';
+    return '<span class="badge bg-secondary">Tidak Diketahui</span>';
 }
 ?>
 <!DOCTYPE html>
@@ -69,11 +99,27 @@ function badgeStatus($status){
   <title>Detail Pesanan Saya</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="container py-4">
+<body class="bg-light">
 
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="index.php">MedicShop</a>
+    <div class="collapse navbar-collapse">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link text-warning" href="logout.php">Logout</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container py-4">
   <h2 class="mb-3">Detail Pesanan #<?= htmlspecialchars($order['id']); ?></h2>
 
   <div class="mb-3">
+    <p><strong>Toko:</strong> <?= htmlspecialchars($nama_toko_display); ?></p>
     <p><strong>Total:</strong> Rp <?= number_format($order['total'],0,',','.'); ?></p>
     <p><strong>Metode Bayar:</strong> <?= htmlspecialchars($order['metode_bayar']); ?></p>
     <p><strong>Tanggal:</strong> <?= htmlspecialchars($order['tanggal']); ?></p>
@@ -92,7 +138,13 @@ function badgeStatus($status){
     </thead>
     <tbody>
       <?php
-      $stmt2 = mysqli_prepare($koneksi, "SELECT p.nama_produk, i.qty, i.harga FROM order_items i JOIN products p ON i.product_id=p.id WHERE i.order_id = ?");
+      $stmt2 = mysqli_prepare(
+        $koneksi, 
+        "SELECT p.nama_produk, i.qty, i.harga 
+         FROM order_items i 
+         JOIN products p ON i.product_id=p.id 
+         WHERE i.order_id = ?"
+      );
       mysqli_stmt_bind_param($stmt2, "i", $order_id);
       mysqli_stmt_execute($stmt2);
       $res2 = mysqli_stmt_get_result($stmt2);
@@ -124,6 +176,7 @@ function badgeStatus($status){
       </a>
     <?php } ?>
   </div>
+</div>
 
 </body>
 </html>

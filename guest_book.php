@@ -17,30 +17,27 @@ if($_SESSION['user']['role'] !== 'admin'){
 if(isset($_GET['delete'])){
     $id = intval($_GET['delete']);
 
-    // cegah admin hapus dirinya sendiri
     if($id == $_SESSION['user']['id']){
         header("Location: guest_book.php?msg=cannot_delete_self");
         exit;
     }
 
-    // prepared statement aman
     $stmt = mysqli_prepare($koneksi, "DELETE FROM users WHERE id = ?");
     mysqli_stmt_bind_param($stmt, "i", $id);
     if(mysqli_stmt_execute($stmt)){
         header("Location: guest_book.php?msg=deleted");
         exit;
     } else {
-        // tampilkan error jika gagal (misal foreign key constraint)
         $err = mysqli_error($koneksi);
         header("Location: guest_book.php?msg=error&info=" . urlencode($err));
         exit;
     }
 }
 
-// ======== AMBIL DATA USER ========
+// ======== AMBIL DATA USER (lengkap) ========
 $q = mysqli_query(
     $koneksi,
-    "SELECT id, username, email, role, created_at
+    "SELECT id, username, email, role, no_hp, dob, gender, alamat, created_at
      FROM users ORDER BY id DESC"
 ) or die("Query Error: ".mysqli_error($koneksi));
 ?>
@@ -50,6 +47,7 @@ $q = mysqli_query(
   <meta charset="UTF-8">
   <title>Guest Book - Data User</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="bg-light">
 
@@ -113,9 +111,14 @@ $q = mysqli_query(
         </td>
         <td><?= $row['created_at'] ?></td>
         <td>
-          <a href="user_detail.php?id=<?= $row['id'] ?>" class="btn btn-sm btn-info text-white">
+          <!-- Tombol Detail pakai Modal -->
+          <button type="button" 
+                  class="btn btn-sm btn-info text-white" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#detailModal<?= $row['id'] ?>">
             Lihat Data
-          </a>
+          </button>
+
           <?php if($row['role'] !== 'admin'){ ?>
             <a href="guest_book.php?delete=<?= $row['id'] ?>"
                onclick="return confirm('Yakin ingin menghapus user ini?')"
@@ -127,6 +130,30 @@ $q = mysqli_query(
           <?php } ?>
         </td>
       </tr>
+
+      <!-- ======== MODAL DETAIL USER ======== -->
+      <div class="modal fade" id="detailModal<?= $row['id'] ?>" tabindex="-1" aria-labelledby="detailLabel<?= $row['id'] ?>" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+              <h5 class="modal-title" id="detailLabel<?= $row['id'] ?>">Detail User #<?= $row['id'] ?></h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p><strong>Username:</strong> <?= htmlspecialchars($row['username']) ?></p>
+              <p><strong>Email:</strong> <?= htmlspecialchars($row['email']) ?></p>
+              <p><strong>No Telepon:</strong> <?= !empty($row['no_hp']) ? htmlspecialchars($row['no_hp']) : '-' ?></p>
+              <p><strong>Tanggal Lahir:</strong> <?= !empty($row['dob']) ? htmlspecialchars($row['dob']) : '-' ?></p>
+              <p><strong>Jenis Kelamin:</strong> <?= !empty($row['gender']) ? htmlspecialchars($row['gender']) : '-' ?></p>
+              <p><strong>Alamat:</strong> <?= !empty($row['alamat']) ? htmlspecialchars($row['alamat']) : '-' ?></p>
+              <p><strong>Tanggal Daftar:</strong> <?= $row['created_at'] ?></p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <?php } ?>
     </tbody>
   </table>
